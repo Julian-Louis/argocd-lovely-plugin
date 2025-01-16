@@ -5,7 +5,6 @@ package features
 import (
 	"github.com/crumbhole/argocd-lovely-plugin/pkg/config"
 	"os"
-	"strconv"
 )
 
 // GetPlugins returns the list of plugins to run during the generate phase after main processing
@@ -50,9 +49,9 @@ func GetKustomizePath() string {
 
 // GetKustomizeParams returns extra parameters to pass to kustomize
 // Set LOVELY_KUSTOMIZE_PARAMS to extra parameters to pass to kustomize
-func GetKustomizeParams() []string {
+func GetKustomizeParams() ([]string, error) {
 	f := Features()[KustomizeParams]
-	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ` `)
+	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ' ')
 }
 
 // GetHelmPath returns the path to helm if overridden, otherwise we search the path
@@ -78,16 +77,23 @@ func GetHelmPatch() string {
 
 // GetHelmTemplateParams returns extra parameters to pass to helm template
 // Set LOVELY_HELM_TEMPLATE_PARAMS to extra parameters to pass to helm template
-func GetHelmTemplateParams() []string {
+func GetHelmTemplateParams() ([]string, error) {
 	f := Features()[HelmTemplateParams]
-	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ` `)
+	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ' ')
 }
 
 // GetHelmRepoAddParams returns extra parameters to pass to helm repo add
 // Set LOVELY_HELM_REPO_ADD_PARAMS to extra parameters to pass to helm template
-func GetHelmRepoAddParams() []string {
+func GetHelmRepoAddParams() ([]string, error) {
 	f := Features()[HelmRepoAddParams]
-	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ` `)
+	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ' ')
+}
+
+// GetHelmCRDs returns whether to explicitly tell helm to include or skip CRDS
+// Set LOVELY_HELM_CRDS to configure this
+func GetHelmCRDs() bool {
+	f := Features()[HelmCRDs]
+	return config.GetBoolParam(f.EnvName(), f.DefaultVal)
 }
 
 // GetKustomizeMerge returns the yaml to strategic merge into kustomization.yaml
@@ -102,17 +108,6 @@ func GetKustomizeMerge() string {
 func GetKustomizePatch() string {
 	f := Features()[KustomizePatch]
 	return config.GetStringParam(f.EnvName(), f.DefaultVal)
-}
-
-// GetAllowGitCheckout establishes if git is safe to use
-// Set ALLOW_GITCHECKOUT to true to say you've told Argo this is safe
-func GetAllowGitCheckout() bool {
-	f := Features()[AllowGitCheckout]
-	res, err := strconv.ParseBool(config.GetStringParam(f.EnvName(), f.DefaultVal))
-	if err != nil {
-		return false
-	}
-	return res
 }
 
 // GetHelmName gives us the application name for helm
@@ -138,15 +133,16 @@ func GetHelmNamespace() string {
 
 // GetHelmValues gives us the values file we're going to use for helm
 // Set LOVELY_HELM_VALUES to the path to use for the values file
-func GetHelmValues() []string {
+func GetHelmValues() ([]string, error) {
 	f := Features()[HelmValues]
-	return config.GetStringListParam(f.EnvName(), `values.yaml`, ` `)
+	return config.GetStringListParam(f.EnvName(), `values.yaml`, ' ')
 }
 
 // GetHelmValuesSet returns true if HelmValues() is explicily set
 func GetHelmValuesSet() bool {
 	f := Features()[HelmValues]
-	return len(config.GetStringListParam(f.EnvName(), f.DefaultVal, ` `)) != 0
+	helmValues, _ := config.GetStringListParam(f.EnvName(), f.DefaultVal, ' ')
+	return len(helmValues) != 0
 }
 
 // GetHelmfilePath returns the path to helm if overridden, otherwise we search the path
@@ -154,6 +150,13 @@ func GetHelmValuesSet() bool {
 func GetHelmfilePath() string {
 	f := Features()[HelmfilePath]
 	return config.GetStringParam(f.EnvName(), f.DefaultVal)
+}
+
+// GetHelmfileCRDs returns whether to explicitly tell helm to include or skip CRDS
+// Set LOVELY_HELM_CRDS to configure this
+func GetHelmfileCRDs() bool {
+	f := Features()[HelmfileCRDs]
+	return config.GetBoolParam(f.EnvName(), f.DefaultVal)
 }
 
 // GetHelmfileMerge returns the yaml to strategic merge into values.yaml
@@ -168,4 +171,18 @@ func GetHelmfileMerge() string {
 func GetHelmfilePatch() string {
 	f := Features()[HelmfilePatch]
 	return config.GetStringParam(f.EnvName(), f.DefaultVal)
+}
+
+// GetHelmfileTemplateParams returns extra parameters to pass to helmfile template
+// Set LOVELY_HELMFILE_TEMPLATE_PARAMS to extra parameters to pass to helmfile template
+func GetHelmfileTemplateParams() ([]string, error) {
+	f := Features()[HelmfileTemplateParams]
+	return config.GetStringListParam(f.EnvName(), f.DefaultVal, ' ')
+}
+
+// GetEnvPropagation returns extra parameters to pass to processor stage
+// Set LOVELY_ENV_PROPAGATION to activate env propagation
+func GetEnvPropagation() bool {
+	f := Features()[EnvPropagation]
+	return config.GetBoolParam(f.EnvName(), f.DefaultVal)
 }
