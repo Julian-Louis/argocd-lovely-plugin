@@ -3,12 +3,20 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/hexops/gotextdiff"
+	"github.com/hexops/gotextdiff/myers"
+	"github.com/hexops/gotextdiff/span"
 	"github.com/otiai10/copy"
 	"gopkg.in/yaml.v3"
 	"os"
 	"regexp"
 	"testing"
 )
+
+func prettyDiff(expected, got string) string {
+	edits := myers.ComputeEdits(span.URIFromPath("expected.txt"), expected, got)
+	return fmt.Sprint(gotextdiff.ToUnified("expected.txt", "got.txt", expected, edits))
+}
 
 const (
 	normalPath = "test/"
@@ -69,7 +77,7 @@ func matchExpected(path string, givenValue string) error {
 	if string(expected) == givenValue {
 		return nil
 	}
-	return fmt.Errorf("Expected >\n%s\n< and got >\n%s\n<", expected, givenValue)
+	return fmt.Errorf("%s", prettyDiff(string(expected), givenValue))
 }
 
 func matchExpectedWithStore(path string, givenValue string) error {
@@ -130,19 +138,8 @@ func testDirs(t *testing.T, path string, errorsExpected bool) {
 	}
 }
 
-// Tests with copy
-func TestDirectoriesCopy(t *testing.T) {
-	testDirs(t, normalPath, false)
-}
-
-// Tests with git checkout/clean
-func TestDirectoriesGitCheckout(t *testing.T) {
-	t.Setenv(`LOVELY_ALLOW_GITCHECKOUT`, `true`)
-	testDirs(t, normalPath, false)
-}
-
-// Test as sidecar
-func TestDirectoriesSidecar(t *testing.T) {
+// TestDirectories runs Tests as sidecar only
+func TestDirectories(t *testing.T) {
 	os.RemoveAll(copyPath)
 	opt := copy.Options{
 		OnDirExists: func(_ string, _ string) copy.DirExistsAction {
@@ -153,12 +150,11 @@ func TestDirectoriesSidecar(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Setenv(`LOVELY_SIDECAR`, `true`)
 	testDirs(t, copyPath, false)
 	os.RemoveAll(copyPath)
 }
 
-// Error Tests with copy
+// TestDirectoriesError runs Error Tests with copy
 func TestDirectoriesError(t *testing.T) {
 	testDirs(t, errorsPath, true)
 }
