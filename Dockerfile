@@ -1,16 +1,16 @@
-FROM golang:1.21.3 as builder
+FROM golang:1.24.1 AS builder
  # https://github.com/mikefarah/yq/releases
  # renovate: datasource=github-releases depName=mikefarah/yq
-ARG YQ_VERSION=v4.35.2
+ARG YQ_VERSION=v4.45.1
  # https://github.com/kubernetes-sigs/kustomize/releases
  # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize
-ARG KUSTOMIZE_VERSION=v5.0.3
+ARG KUSTOMIZE_VERSION=5.6.0
  # https://github.com/helm/helm/releases
  # renovate: datasource=github-releases depName=helm/helm
-ARG HELM_VERSION=v3.13.1
+ARG HELM_VERSION=v3.17.1
  # https://github.com/helmfile/helmfile/releases
  # renovate: datasource=github-releases depName=helmfile/helmfile
-ARG HELMFILE_VERSION=v0.157.0
+ARG HELMFILE_VERSION=v0.171.0
 
 ARG LOVELY_VERSION
 
@@ -23,13 +23,16 @@ RUN /build/scripts/deps.sh
 
 RUN make plugin_versioned.yaml all -j4
 
-FROM alpine:3.18.4
+FROM alpine:3.21.3
 ENV LOVELY_HELM_PATH=/usr/local/bin/helm
 ENV LOVELY_HELMFILE_PATH=/usr/local/bin/helmfile
 ENV LOVELY_KUSTOMIZE_PATH=/usr/local/bin/kustomize
 ENV LOVELY_PLUGINS=
 ENV LOVELY_PREPROCESSORS=
-ENV LOVELY_SIDECAR=true
+ENV HOME=/tmp
+ENV HELM_CONFIG_HOME=/tmp/.helm
+ENV HELM_CACHE_HOME=/tmp/.helm
+ENV HELM_DATA_HOME=/tmp/.helm
 COPY --from=builder /usr/local/bin/yq /usr/local/bin/yq
 COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=builder /usr/local/bin/helmfile /usr/local/bin/helmfile
@@ -38,6 +41,7 @@ COPY --from=builder /build/build/argocd-lovely-plugin /usr/local/bin/argocd-love
 RUN apk add git bash --no-cache
 
 USER 999
+RUN mkdir -p /tmp/.helm
 COPY --from=builder --chown=999 /build/plugin_versioned.yaml /home/argocd/cmp-server/config/plugin.yaml
 COPY entrypoint.sh /entrypoint.sh
 # /var/run/argocd/argocd-cmp-server does NOT exist inside the image, must be mounted from argocd
