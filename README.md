@@ -34,8 +34,7 @@ We aim to match the [Argo CD supported versions](https://argo-cd.readthedocs.io/
 We offer many pre-built container options. We only support the use of these containers, the binaries provided are for convenience:
 
 - `argocd-lovely-plugin-cmp` to install as a sidecar plugin, which is versioned.
-- The deprecated `argocd-lovely-plugin` if you wish to install as an older-style configMap plugin.
-- [Variations](doc/variations.md) lists many other versions of the plugin, and explains versioning
+- [Variations](doc/variations.md) lists many other versions of the plugin, and explains versioning.
 
 ## Installing as an Argo CD Sidecar Plugin
 We recommend you install as an Argo CD CMP Sidecar Plugin. [Argo CD's documentation](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/#sidecar-plugin) has steps on how to achieve this, or you can see [our Kustomization example](examples/installation). You can also observe how we install Lovely for our CI tests in the [CI bootstrap directory](.github/workflows/assets/bootstrap) in this repo.
@@ -54,14 +53,9 @@ spec:
 ```
 For more information, please refer to the [Argo CD Documentation on discovery](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/#write-discovery-rules-for-your-plugin).
 
-## Installing as an Argo CD ConfigMap Plugin (Deprecated - Will not work in Argo CD 2.8+)
-You can use [our Kustomization example](examples/installation/legacy-argocd) to install Argo CD and to bootstrap the installation of the plugin at the same time.
-
-At the moment the helmfile binary is not installed for you if you are running as a configmap plugin, nor is that documented here. You must get the helmfile binary into your repo-server yourself.
-
 ## Environment variables
 
-argocd-lovely-plugin is configured through environment variables and parameters. These can be set in both the sidecar (or for configmaps, the argocd-repo-server) and in the application itself.
+argocd-lovely-plugin is configured through environment variables and parameters. These can be set in both the sidecar and in the application itself.
 
 If you are passing the configuration in as application environment variables in Argo CD 2.4 or higher you must not put the `ARGOCD_ENV_` prefix on them, as Argo CD does that for you.
 
@@ -85,6 +79,8 @@ Have a look at the [examples directory](examples/README.md) for a list of exampl
 ## What doesn't it do?
 This is not a templating tool, there are plenty of choices out there to that stuff. It just brings together external tools.
 
+There is not [yet](https://github.com/crumbhole/argocd-lovely-plugin/issues/36) support for accessing private helm repos.
+
 # How does it work?
 For more details on what lovely does read [this](doc/how.md)
 
@@ -93,7 +89,7 @@ For more details on what lovely does read [this](doc/how.md)
 You can download `argocd-lovely-plugin` binary and run it in an application directory. Errors will go to stderr, and the rendered yaml will appear on stdout.
 - You will need helm, helmfile and kustomize on your path if you use those. You will also need git and bash.
 - You should set up the expected environment variables. Remember `ARGOCD_APP_NAME` needs to be set for helm chart rendering, or can be overridden with `LOVELY_HELM_NAME`. One or other must be set.
-- Understand [the docs](docs/how.md), especially the 'clean copy' section
+- Understand [the docs](doc/how.md), especially the 'clean copy' section
 
 # Videos
 If you prefer to watch videos of things rather than read words, we have compiled some demos.
