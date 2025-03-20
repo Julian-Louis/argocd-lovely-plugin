@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
 
@@ -26,10 +26,10 @@ jobs:
         KUSTOMIZE_VERSION=kustomize/v5.0.3
         # https://github.com/helm/helm/releases
         # renovate: datasource=github-releases depName=helm/helm
-        HELM_VERSION=v3.13.1
+        HELM_VERSION=v3.17.2
         # https://github.com/helmfile/helmfile/releases
         # renovate: datasource=github-releases depName=helmfile/helmfile
-        HELMFILE_VERSION=v0.157.0
+        HELMFILE_VERSION=v0.171.0
         # Install Helm
         curl -SL https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -xz linux-amd64/helm && mv linux-amd64/helm /usr/local/bin/
         # Install Kustomize
@@ -61,7 +61,7 @@ jobs:
 
           docker tag k3d-registry.localhost:5000/lovely ghcr.io/crumbhole/argocd-lovely-plugin-cmp:ci
       - name: Temporarily save CMP Docker image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lovely-cmp-docker
           path: /tmp/lovely-cmp
@@ -73,14 +73,13 @@ jobs:
     strategy:
       matrix:
         argocd_version:
-          - "2.9"
-          - "2.8"
-          - "2.7"
+          - "2.13"
+          - "2.12"
       fail-fast: true
     steps:
       - uses: actions/checkout@v4
       - name: Retrieve saved Docker image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: lovely-cmp-docker
           path: /tmp/lovely-cmp
@@ -97,8 +96,9 @@ jobs:
           kubectl apply -k .github/workflows/assets/bootstrap/argocd-cmp-${{ matrix.argocd_version }}
           kubectl -n argocd rollout status statefulset/argocd-application-controller
           kubectl -n argocd rollout status deployment/argocd-repo-server
-          kubectl -n argocd apply -f .github/workflows/assets/applications/cmp-helm_only_in_kustomize.yml
-          kubectl -n argocd apply -f .github/workflows/assets/applications/cmp-helm_plus_additions.yml
+          kubectl -n argocd apply -f .github/workflows/assets/applications/helm_only_in_kustomize.yaml
+          kubectl -n argocd apply -f .github/workflows/assets/applications/helm_plus_additions.yaml
+          kubectl -n argocd apply -f .github/workflows/assets/applications/helmfile.yaml
       - name: "Test helmonlyinkustomize"
         run: |
           kubectl config use-context k3d-lovely
@@ -114,6 +114,13 @@ jobs:
           kubectl -n helmplusadditions logs -l=app.kubernetes.io/name=hello-world --ignore-errors=true
           kubectl -n helmplusadditions get secrets mysecret
           kubectl -n helmplusadditions get configmaps index.html-g9575k5952
+      - name: "Test helmfile"
+        run: |
+          kubectl config use-context k3d-lovely
+          sleep 30
+          kubectl -n helmfile rollout status deployment/test-hello-world
+          kubectl -n helmfile describe pod -l=app.kubernetes.io/name=hello-world
+          kubectl -n helmfile logs -l=app.kubernetes.io/name=hello-world --ignore-errors=true
 
   delete-ci-lovely-containers:
     name: Delete CI Lovely Containers
@@ -121,7 +128,7 @@ jobs:
     needs: [test-deploy-argocd-cmp-sidecar]
     steps:
       - name: delete-artifact
-        uses: geekyeggo/delete-artifact@v2
+        uses: geekyeggo/delete-artifact@v5
         with:
             name: lovely-cmp-docker
 
@@ -143,7 +150,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.CR_PAT }}
       - name: Build sidecar image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
