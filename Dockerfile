@@ -1,4 +1,4 @@
-FROM golang:1.24.3 AS builder
+FROM golang:1.24.4 AS builder
  # https://github.com/mikefarah/yq/releases
  # renovate: datasource=github-releases depName=mikefarah/yq
 ARG YQ_VERSION=v4.45.4
@@ -10,7 +10,7 @@ ARG KUSTOMIZE_VERSION=5.6.0
 ARG HELM_VERSION=v3.18.2
  # https://github.com/helmfile/helmfile/releases
  # renovate: datasource=github-releases depName=helmfile/helmfile
-ARG HELMFILE_VERSION=v1.1.1
+ARG HELMFILE_VERSION=v1.1.2
 
 ARG LOVELY_VERSION
 
